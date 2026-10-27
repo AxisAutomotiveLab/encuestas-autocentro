@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<title>Encuestas de satisfacción · La Voz del Cliente</title>
+<meta name="robots" content="noindex,nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Mismo diseño que el Portal de Dashboards (vista "Encuestas de satisfacción") -->
+<style>
+:root{--navy:#13213f;--navy2:#0f1d38;--bg:#f3f5f9;--ink:#0f1b33;--muted:#5b6577;--line:#dfe3ea;--panel:#fff;--green:#1e7a4c;--red:#a2340f;--amber:#9a6a00;--blue:#1f4fa3;--soft:#e7eefb;--tab:#6f9bef;--inl:#cfd5df;--hover:#f1f4fa;--subtle:#f1f3f7;--pre:#f6f7fa;--bar:#eef1f6;--faint:#8597b8;--errbg:#fbeae5;--okbg:#e6f3ec;--ambbg:#fbf1d9;--nbg:#eef0f4;color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--navy:#0b1428;--navy2:#0a1222;--bg:#0d1424;--ink:#e6ebf5;--muted:#9aa6bd;--line:#26324b;--panel:#151e33;--green:#5fc28f;--red:#f08a6b;--amber:#e2b34f;--blue:#8fb3ff;--soft:#1d2c4d;--tab:#6f9bef;--inl:#33405c;--hover:#1c2740;--subtle:#1a2338;--pre:#1a2338;--bar:#22304b;--faint:#6f7d98;--errbg:#3a1f19;--okbg:#173226;--ambbg:#3a2e12;--nbg:#222c41;color-scheme:dark}}
+:root[data-theme="dark"]{--navy:#0b1428;--navy2:#0a1222;--bg:#0d1424;--ink:#e6ebf5;--muted:#9aa6bd;--line:#26324b;--panel:#151e33;--green:#5fc28f;--red:#f08a6b;--amber:#e2b34f;--blue:#8fb3ff;--soft:#1d2c4d;--tab:#6f9bef;--inl:#33405c;--hover:#1c2740;--subtle:#1a2338;--pre:#1a2338;--bar:#22304b;--faint:#6f7d98;--errbg:#3a1f19;--okbg:#173226;--ambbg:#3a2e12;--nbg:#222c41;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 Inter,'Segoe UI',Arial,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--tab);outline-offset:2px}
+[hidden]{display:none!important}
+.sr{position:absolute;left:-9999px}
+.btn{min-height:44px;border:0;border-radius:8px;background:var(--navy);color:#fff;font-weight:600;padding:0 16px}
+.btn.green{background:var(--green)}
+.btn.ghost{background:var(--panel);color:var(--ink);border:1px solid var(--line)}
+.btn.sm{min-height:36px;padding:0 12px;font-size:13px}
+.btn:disabled{opacity:.6;cursor:wait}
+.err{background:var(--errbg);color:var(--red);border-radius:8px;padding:10px 12px;font-size:13px}
+/* encabezado */
+header.top{background:var(--navy);color:#fff;padding:0 16px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 24px;min-height:58px;position:sticky;top:0;z-index:10}
+.hb{display:flex;align-items:center;gap:10px;padding:8px 0}
+.hb .logo{width:32px;height:32px;border-radius:8px;background:#e9edf5;font-size:13px;color:var(--navy);display:grid;place-items:center;font-weight:800;overflow:hidden}
+.hb .logo img{width:100%;height:100%;object-fit:contain;background:#fff}
+.hb b{display:block;font-size:15px;line-height:1.15}
+.hb small{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:#9fb0cf}
+.seg{display:flex;border:1px solid #33497a;border-radius:8px;overflow:hidden;background:#182a50}
+.seg button{border:0;background:none;color:#c8d3e8;min-height:34px;padding:0 10px;font-size:12.5px;font-weight:500}
+.seg button+button{border-left:1px solid #33497a}
+.seg button[aria-pressed="true"]{background:#1f3563;color:#fff;font-weight:700}
+/* contenido */
+main{max-width:1240px;margin:0 auto;padding:24px 20px 48px;display:flex;flex-direction:column;gap:20px}
+.h1{margin:0;font-size:24px;font-weight:700}
+.sub{margin:0;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel h2{margin:0;font-size:16px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:860px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.kpi{padding:14px 16px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -1px -1px 0;display:grid;gap:2px;align-content:start}
+.kpi .l{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.kpi b{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15}
+.kpi span{font-size:12px;color:var(--muted)}
+.bad{color:var(--red)!important}
+.good{color:var(--green)!important}
+.list{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.list li{display:flex;gap:10px;align-items:flex-start}
+.pill{font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;white-space:nowrap;background:var(--soft);color:var(--blue)}
+.pill.r{background:var(--errbg);color:var(--red)}
+.pill.g{background:var(--okbg);color:var(--green)}
+.pill.a{background:var(--ambbg);color:var(--amber)}
+.pill.n{background:var(--nbg);color:var(--muted)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:13px}
+th{text-align:right;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{text-align:right;padding:9px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left;white-space:normal}
+tr:last-child td{border-bottom:0}
+td.na{color:var(--faint)}
+th[data-ord]{cursor:pointer}
+th[data-ord]:hover{color:var(--ink)}
+.filters{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.filters label{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.filters select{min-height:40px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.filters .upd{margin-left:auto;font-size:12px;color:var(--muted)}
+.stabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto}
+.stabs button{min-height:44px;padding:0 14px;border:0;border-bottom:3px solid transparent;background:none;font-weight:600;color:var(--muted);white-space:nowrap}
+.stabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--tab)}
+.q{display:grid;gap:6px}
+.q h3{margin:0;font-size:13px}
+.qr{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr) 70px;gap:10px;align-items:center;font-size:12.5px}
+.qr .bar{height:10px;background:var(--bar);border-radius:3px;overflow:hidden}
+.qr .bar i{display:block;height:100%;background:var(--blue)}
+.qr .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+@media (max-width:560px){.qr{grid-template-columns:minmax(0,1fr) 60px}.qr .bar{grid-column:1/-1;grid-row:2}}
+.alert{border:1px solid var(--line);border-left:4px solid var(--red);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--panel)}
+.alert.res{border-left-color:var(--green)}
+.alert.proc{border-left-color:var(--amber)}
+.alert .hd{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.alert .meta{display:flex;flex-wrap:wrap;gap:4px 16px;color:var(--muted);font-size:12.5px}
+.alert .meta b{color:var(--ink);font-weight:600}
+.alert pre{margin:0;white-space:pre-wrap;font:inherit;font-size:12.5px;color:var(--muted);background:var(--pre);border-radius:6px;padding:8px 10px}
+.alert textarea{width:100%;min-height:60px;border:1px solid var(--inl);background:var(--panel);border-radius:8px;padding:8px 10px;resize:vertical}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+.empty{color:var(--muted);text-align:center;padding:28px 12px}
+.loading{color:var(--muted);padding:40px 12px;text-align:center}
+details.more summary{cursor:pointer;color:var(--blue);font-weight:600;font-size:12.5px}
+details.more[open] summary{margin-bottom:8px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:13px;z-index:50;max-width:calc(100vw - 32px)}
+.mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}
+.mini div{display:grid;gap:2px}
+.mini b{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15}
+.mini span{font-size:12px;color:var(--muted)}
+.stack{display:flex;height:14px;border-radius:4px;overflow:hidden;background:var(--bar)}
+.stack span{display:block;height:100%;min-width:2px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.golink{margin-left:auto;font-weight:600;font-size:13px;color:var(--blue);text-decoration:none}
+.golink:hover{text-decoration:underline}
+.hd2{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="hb">
+    <span class="logo" id="logo" aria-hidden="true">AC</span>
+    <span><b id="hbTit">Encuestas de satisfacción</b><small id="hbSub">La Voz del Cliente</small></span>
+  </div>
+  <div class="seg" role="group" aria-label="Tema">
+    <button type="button" data-tema="auto">Auto</button><button type="button" data-tema="light">Claro</button><button type="button" data-tema="dark">Oscuro</button>
+  </div>
+</header>
+<main id="pEncuestas"><div class="loading">Cargando…</div></main>
+
+<script>
+</script>
+<script>
+window.__iniciar = function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var MES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  var PREG = CFG.preguntas || [];
+  var DEPTOS = CFG.departamentos || ['Servicio', 'Ventas'];
+  var MARCAS = CFG.marcas || [];
+  var MODO = CFG.modo === 'alertas' ? 'alertas' : 'dashboard';
+  var UNO = DEPTOS.length === 1;
+  var store = {
+    get: function (k, d) { try { var v = localStorage.getItem('enc_' + k); return v == null ? d : v; } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem('enc_' + k, v); } catch (e) {} }
+  };
+  var encData = null, encPer = '30', encAl = 'Pendientes', encMarca = 'Todas', encDepto = CFG.deptoInicial || store.get('depto', DEPTOS[0]), ordA = { k: 'n', dir: -1 };
+  if (DEPTOS.indexOf(encDepto) === -1) encDepto = DEPTOS[0];
+  var ESTADOS = [['Pendiente', 'var(--red)'], ['En proceso', 'var(--amber)'], ['No contesta', 'var(--faint)'], ['Resuelta', 'var(--green)']];
+
+  if (CFG.logoUrl) { var im = document.createElement('img'); im.src = CFG.logoUrl; im.alt = ''; $('logo').textContent = ''; $('logo').appendChild(im); }
+
+  // Tema (igual que el portal: Auto / Claro / Oscuro)
+  function aplicarTema(t) {
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-tema]'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.tema === (t || 'auto'))); });
+    store.set('tema', t || 'auto');
+  }
+  aplicarTema(store.get('tema', 'auto'));
+  Array.prototype.forEach.call(document.querySelectorAll('[data-tema]'), function (b) { b.onclick = function () { aplicarTema(b.dataset.tema); }; });
+
+  // Utilidades
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function fmt(n) { return n == null ? '—' : Number(n).toLocaleString('es-PR'); }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function d1(v) { return v == null ? '—' : v.toFixed(1); }
+  function num(v) { var n = parseFloat(v); return isNaN(n) ? null : n; }
+  function avg(a, k) { var v = a.map(function (x) { return x[k]; }).filter(function (x) { return x != null; }); return v.length ? v.reduce(function (s, x) { return s + x; }, 0) / v.length : null; }
+  function pctOf(a, f) { return a.length ? Math.round(a.filter(f).length / a.length * 100) : null; }
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function claveDia(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function fCorta(r) { var d = r._d; return d.getDate() + ' ' + MES[d.getMonth()].slice(0, 3) + ' ' + d.getFullYear(); }
+  function toast(m) { var t = document.createElement('div'); t.className = 'toast'; t.textContent = m; document.body.appendChild(t); setTimeout(function () { t.remove(); }, 3200); }
+  function run(fn) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    if (fn !== 'getDashboardData') return Promise.reject(new Error('Esta acción solo está disponible en el enlace de Alertas.'));
+    if (window.__primeros) { var p = window.__primeros; window.__primeros = null; return Promise.resolve(p); } // primera carga: ya vino con la configuración
+    return fetch(API + '?page=api&key=' + encodeURIComponent(CFG.key)).then(function (r) { return r.json(); })
+      .then(function (d) { if (d.error) throw new Error(d.error); return d.rows; });
+  }
+  function preguntasDe(d) { return PREG.filter(function (q) { return q.deptos.indexOf(d) !== -1; }); }
+  function esSi(x) { return /^s[ií]/i.test(String(x || '')); }
+  function enlace(pagina) { // a la otra página (dashboard ↔ alertas) con la misma clave
+    if (!CFG.baseUrl) return '';
+    return CFG.baseUrl + '?page=' + pagina + (UNO || encDepto ? '&depto=' + encodeURIComponent(encDepto.toLowerCase()) : '') + '&key=' + encodeURIComponent(CFG.key);
+  }
+  function horasResp(rs) { // tiempo de respuesta a alertas
+    var h = rs.filter(function (r) { return r.fc; }).map(function (r) { return (r.fc - r._d) / 36e5; }).filter(function (x) { return x >= 0; });
+    var p = h.length ? h.reduce(function (s, x) { return s + x; }, 0) / h.length : null;
+    return { prom: p, en24: h.filter(function (x) { return x <= 24; }).length,
+      txt: p == null ? '—' : (p < 48 ? (p < 10 ? p.toFixed(1) : Math.round(p)) + ' h' : (p / 24).toFixed(1) + ' días') };
+  }
+
+  // Convierte una fila del Sheet al formato de la vista
+  function normal(o) {
+    var d = new Date(o.Fecha);
+    var q = {};
+    preguntasDe(o.Departamento).forEach(function (p) { if (o[p.key] !== '' && o[p.key] != null) q[p.key] = o[p.key]; });
+    return { id: o.ID, d: o.Departamento, m: o.Marca || '', _d: d, dia: claveDia(d), mes: claveDia(d).slice(0, 7),
+      sat: num(o.Satisfaccion), as: o.Representante || '', q: q,
+      al: o.Alerta === 'Sí', est: o.EstadoAlerta || (o.Alerta === 'Sí' ? 'Pendiente' : ''), mot: o.MotivoAlerta || '', tel: o.Telefono || '',
+      cli: o.Nombre || '', ac: o.AceptaContacto !== 'No', nota: o.NotaSeguimiento || '', agente: o.Agente || '',
+      rc: o.ClicResena === 'Sí', fc: o.FechaContacto ? new Date(o.FechaContacto) : null, com: o.Comentario || '' };
+  }
+
+  async function cargar(force) {
+    if (encData && !force) { render(); return; }
+    if (!encData) $('pEncuestas').innerHTML = '<div class="loading">Cargando…</div>';
+    try {
+      var rows = await run('getDashboardData', CFG.key);
+      if (typeof rows === 'string') rows = JSON.parse(rows);
+      encData = { respuestas: (rows || []).map(normal), cargado: new Date() };
+      render();
+    } catch (e) { $('pEncuestas').innerHTML = '<div class="err">' + esc(e && e.message || e) + '</div>'; }
+  }
+
+  function periodosEnc() {
+    var s = {}; encData.respuestas.forEach(function (r) { s[r.mes] = 1; });
+    return Object.keys(s).sort().reverse();
+  }
+  function enPeriodo(r) {
+    if (encPer === 'todo') return true;
+    if (encPer === '30') return r.dia >= claveDia(new Date(Date.now() - 30 * 864e5));
+    return r.mes === encPer;
+  }
+  function activas(dp) { var a = MODO === 'alertas' ? null : (CFG.marcasActivas || {})[dp || encDepto]; return a && a.length ? a : null; }
+  function visible(r) { var a = activas(r.d); return !a || a.indexOf(r.m) >= 0; }
+  function nomMarca() { if (encMarca !== 'Todas') return encMarca; var ml = marcasLista(); return ml.length === 1 ? ml[0] : 'Todas las marcas'; }
+  function marcasLista() { // las de CONFIG + cualquier otra que aparezca en los datos (o solo las activas del departamento)
+    var act = activas(); if (act) return act.slice();
+    var s = MARCAS.slice(); encData.respuestas.forEach(function (r) { if (r.m && s.indexOf(r.m) === -1) s.push(r.m); });
+    return s;
+  }
+
+  // Resumen de las preguntas del departamento: promedio 1–5 (escala) o % de "Sí"
+  function indic(a, dep) {
+    var ps = preguntasDe(dep), v5 = [], si = 0, tot = 0;
+    a.forEach(function (r) {
+      ps.forEach(function (p) {
+        var x = r.q[p.key];
+        if (x == null) return;
+        if (p.tipo === 'escala') { var n = num(x); if (n != null) v5.push(n); }
+        else { tot++; if (esSi(x)) si++; }
+      });
+    });
+    return { prom: v5.length ? v5.reduce(function (s, x) { return s + x; }, 0) / v5.length : null, pctSi: tot ? Math.round(si / tot * 100) : null };
+  }
+  function valorPregunta(a, p) { // una sola pregunta: promedio o % Sí
+    var vals = a.map(function (r) { return r.q[p.key]; }).filter(function (x) { return x != null; });
+    if (!vals.length) return { t: '—', bad: false, n: null };
+    if (p.tipo === 'escala') { var pr = vals.reduce(function (s, x) { return s + num(x); }, 0) / vals.length; return { t: d1(pr), bad: pr <= 3.5, n: pr }; }
+    var pc = Math.round(vals.filter(esSi).length / vals.length * 100); return { t: pc + '%', bad: pc < 80, n: pc };
+  }
+
+  // Partes comunes: encabezado, filtros y pestañas de departamento
+  function cabecera(titulo, otro) {
+    var pl = encPer === 'todo' ? 'todo el historial' : encPer === '30' ? 'los últimos 30 días' : MES[+encPer.slice(5) - 1] + ' ' + encPer.slice(0, 4);
+    var ml = marcasLista();
+    var cntDep = function (dp) { return encData.respuestas.filter(function (r) { return r.d === dp && enPeriodo(r) && visible(r) && (encMarca === 'Todas' || r.m === encMarca) && (MODO !== 'alertas' || (r.al && r.est !== 'Resuelta')); }).length; };
+    var opcPer = '<option value="30">Últimos 30 días</option>' + periodosEnc().map(function (p) { return '<option value="' + p + '">' + cap(MES[+p.slice(5) - 1]) + ' ' + p.slice(0, 4) + '</option>'; }).join('') + '<option value="todo">Todo el historial</option>';
+    var url = (otro.pagina === 'dashboard' && CFG.verDashboard === false) ? '' : enlace(otro.pagina);
+    return '<div><h1 class="h1">' + titulo + '</h1><p class="sub">Experiencia del cliente · La Voz del Cliente · ' + esc(nomMarca()) + ' · ' + esc(pl) + '</p></div>' +
+      '<div class="filters">' + (ml.length > 1 ? '<label for="eMarca">Marca</label><select id="eMarca"><option>Todas</option>' + ml.map(function (m) { return '<option' + (m === encMarca ? ' selected' : '') + '>' + esc(m) + '</option>'; }).join('') + '</select>' : '') +
+      '<label for="ePer">Periodo</label><select id="ePer">' + opcPer + '</select>' +
+      '<button type="button" class="btn ghost sm" id="eRec">Actualizar</button>' +
+      (url ? '<a class="golink" href="' + esc(url) + '" target="_top">' + otro.texto + ' →</a>' : '<span class="golink" style="color:var(--muted);font-weight:400">Actualizado ' + encData.cargado.toLocaleTimeString('es-PR', { hour: 'numeric', minute: '2-digit' }) + '</span>') + '</div>' +
+      (UNO ? '' : '<div class="stabs" role="tablist">' + DEPTOS.map(function (dp) { return '<button type="button" role="tab" data-dep="' + dp + '" aria-selected="' + (encDepto === dp) + '">' + dp + ' · ' + cntDep(dp) + (MODO === 'alertas' ? ' abiertas' : '') + '</button>'; }).join('') + '</div>');
+  }
+  function enlazarFiltros() {
+    $('ePer').value = encPer;
+    $('ePer').onchange = function (e) { encPer = e.target.value; render(); };
+    if ($('eMarca')) { // el filtro de marca solo aparece si hay más de una marca
+      $('eMarca').value = encMarca;
+      $('eMarca').onchange = function (e) { encMarca = e.target.value; render(); };
+    }
+    $('eRec').onclick = function () { cargar(true); };
+  }
+  function render() {
+    var dl = encDepto.toLowerCase();
+    $('hbTit').textContent = MODO === 'alertas' ? 'Alertas de encuestas' : 'Encuestas de ' + (UNO ? dl : 'satisfacción');
+    $('hbSub').textContent = 'La Voz del Cliente · ' + nomMarca();
+    if (MODO === 'alertas') renderAlertas(); else renderDash();
+  }
+
+  /* ============================== DASHBOARD (resultados) ============================== */
+  function renderDash() {
+    var D = encData;
+    if (encMarca !== 'Todas' && marcasLista().indexOf(encMarca) < 0) encMarca = 'Todas';
+    var porPer = D.respuestas.filter(function (r) { return enPeriodo(r) && r.d === encDepto && visible(r); });
+    var R = porPer.filter(function (r) { return encMarca === 'Todas' || r.m === encMarca; });
+    var abiertas = R.filter(function (r) { return r.al && r.est !== 'Resuelta'; });
+    var sat = avg(R, 'sat'), clic = pctOf(R, function (r) { return r.rc; });
+    var quien = encDepto === 'Servicio' ? 'Asesor' : 'Vendedor';
+    var ps = preguntasDe(encDepto), hay5 = ps.some(function (p) { return p.tipo === 'escala'; });
+    var indTit = hay5 ? 'Preguntas (1–5)' : 'Preguntas (% Sí)';
+    var indVal = function (a) {
+      var x = indic(a, encDepto);
+      return hay5 ? { t: x.prom == null ? '—' : d1(x.prom), bad: x.prom != null && x.prom <= 3.5, n: x.prom }
+                  : { t: x.pctSi == null ? '—' : x.pctSi + '%', bad: x.pctSi != null && x.pctSi < 80, n: x.pctSi };
+    };
+    var pRec = ps.filter(function (p) { return p.key === 'Recomendaria'; })[0];
+    var rec = pRec ? R.filter(function (r) { return r.q.Recomendaria; }) : [], recSi = rec.filter(function (r) { return esSi(r.q.Recomendaria); }).length;
+    var indR = indic(R, encDepto);
+    var alR = R.filter(function (r) { return r.al; });
+    var tr = horasResp(alR);
+
+    // Por marca (todas las marcas, sin importar el filtro de marca)
+    var filasMarca = marcasLista().map(function (m) {
+      var a = porPer.filter(function (r) { return r.m === m; });
+      if (!a.length) return '<tr><td>' + esc(m) + '</td>' + '<td class="na">—</td>'.repeat(5) + '</tr>';
+      var s = avg(a, 'sat'), iv = indVal(a);
+      return '<tr><td><a href="#" data-encm="' + esc(m) + '">' + esc(m) + '</a></td><td>' + fmt(a.length) + '</td><td class="' + (s != null && s < 3 ? 'bad' : '') + '">' + d1(s) + '</td><td class="' + (iv.bad ? 'bad' : '') + '">' + iv.t + '</td><td>' + pctOf(a, function (r) { return r.rc; }) + '%</td><td>' + (a.filter(function (r) { return r.al && r.est !== 'Resuelta'; }).length || '') + '</td></tr>';
+    }).join('');
+
+    // Respuestas por pregunta
+    var preg = ps.map(function (p) {
+      var c = {}; R.forEach(function (r) { var v = r.q[p.key]; if (v != null) c[v] = (c[v] || 0) + 1; });
+      var t = Object.keys(c).reduce(function (s, k) { return s + c[k]; }, 0);
+      if (!t) return '';
+      var h3 = '<h3>' + esc(p.titulo) + ' <span class="sub" style="font-weight:400">· ' + fmt(t) + ' respuestas</span></h3>';
+      if (p.tipo === 'escala') {
+        var sum = 0; Object.keys(c).forEach(function (k) { sum += num(k) * c[k]; }); var pr = sum / t;
+        return '<div class="q">' + h3 + '<div class="qr"><span>Promedio</span><span class="bar"><i style="width:' + (pr / 5 * 100) + '%' + (pr <= 3.5 ? ';background:var(--red)' : '') + '"></i></span><span class="v ' + (pr <= 3.5 ? 'bad' : '') + '">' + d1(pr) + ' de 5</span></div>' +
+          '<div class="sub" style="font-size:12px">' + [5, 4, 3, 2, 1].map(function (k) { return k + ': ' + Math.round((c[k] || 0) / t * 100) + '%'; }).join(' · ') + '</div></div>';
+      }
+      return '<div class="q">' + h3 + Object.keys(c).sort(function (a, b) { return c[b] - c[a]; }).map(function (k) {
+        return '<div class="qr"><span>' + esc(k) + '</span><span class="bar"><i style="width:' + (c[k] / t * 100) + '%' + (/^no$/i.test(k) ? ';background:var(--red)' : '') + '"></i></span><span class="v">' + Math.round(c[k] / t * 100) + '% · ' + c[k] + '</span></div>';
+      }).join('') + '</div>';
+    }).join('');
+
+    // Por asesor / vendedor
+    var porA = {}; R.forEach(function (r) { var k = r.as || '(sin indicar)'; (porA[k] = porA[k] || []).push(r); });
+    var SIN = ['No recuerdo', '(sin indicar)'];
+    var listaA = Object.keys(porA).map(function (k) {
+      var a = porA[k], iv = indVal(a);
+      return { k: k, a: a, n: a.length, sat: avg(a, 'sat'), iv: iv, ivn: iv.n, al: a.filter(function (r) { return r.al; }).length };
+    }).sort(function (x, y) {
+      var sx = SIN.indexOf(x.k) !== -1, sy = SIN.indexOf(y.k) !== -1;
+      if (sx !== sy) return sx ? 1 : -1;
+      var vx = x[ordA.k], vy = y[ordA.k];
+      if (vx == null && vy == null) return 0; if (vx == null) return 1; if (vy == null) return -1;
+      return (vx - vy) * ordA.dir;
+    });
+    var flecha = function (k) { return ordA.k === k ? (ordA.dir < 0 ? ' ▼' : ' ▲') : ''; };
+    var filasA = listaA.map(function (x) {
+      return '<tr><td' + (SIN.indexOf(x.k) !== -1 ? ' class="na"' : '') + '>' + esc(x.k) + '</td><td>' + fmt(x.n) + '</td><td class="' + (x.sat != null && x.sat < 3 ? 'bad' : '') + '">' + d1(x.sat) + '</td><td class="' + (x.iv.bad ? 'bad' : '') + '">' + x.iv.t + '</td><td>' + (x.al || '') + '</td></tr>';
+    }).join('');
+    var detalleA = listaA.map(function (x) {
+      return '<tr><td' + (SIN.indexOf(x.k) !== -1 ? ' class="na"' : '') + '>' + esc(x.k) + '</td>' + ps.map(function (p) { var v = valorPregunta(x.a, p); return '<td class="' + (v.bad ? 'bad' : '') + '">' + v.t + '</td>'; }).join('') + '</tr>';
+    }).join('');
+
+    // Resumen de alertas (solo lectura: lo que entró y lo que se trabajó)
+    var cEst = {}; ESTADOS.forEach(function (e) { cEst[e[0]] = 0; }); alR.forEach(function (r) { cEst[r.est] = (cEst[r.est] || 0) + 1; });
+    var resueltas = cEst.Resuelta || 0;
+    var motivos = {};
+    alR.forEach(function (r) {
+      String(r.mot || '').split(' · ').filter(Boolean).forEach(function (m) {
+        var k = /^Satisfacci/i.test(m) ? 'Satisfacción general baja' : m.split(':')[0].trim();
+        motivos[k] = (motivos[k] || 0) + 1;
+      });
+    });
+    var topMot = Object.keys(motivos).sort(function (a, b) { return motivos[b] - motivos[a]; }).slice(0, 6);
+    var trabajadas = alR.filter(function (r) { return r.est !== 'Pendiente'; }).sort(function (a, b) { return (b.fc || b._d) - (a.fc || a._d); }).slice(0, 5);
+    var urlAl = enlace('alertas');
+    var resumenAl = '<section class="panel"><div class="hd2"><h2>Resumen de alertas</h2>' + (urlAl ? '<a class="golink" href="' + esc(urlAl) + '" target="_top">Trabajar alertas →</a>' : '') + '</div>' +
+      (!alR.length ? '<p class="empty">No hubo alertas en este periodo.</p>' :
+      '<div class="mini"><div><b>' + fmt(alR.length) + '</b><span>alertas</span></div>' +
+        '<div><b class="' + (abiertas.length ? 'bad' : '') + '">' + fmt(abiertas.length) + '</b><span>abiertas</span></div>' +
+        '<div><b class="good">' + fmt(resueltas) + '</b><span>resueltas (' + Math.round(resueltas / alR.length * 100) + '%)</span></div>' +
+        '<div><b>' + tr.txt + '</b><span>tiempo de respuesta</span></div>' +
+        '<div><b class="' + (tr.en24 / alR.length >= 0.9 ? 'good' : '') + '">' + Math.round(tr.en24 / alR.length * 100) + '%</b><span>contactadas en menos de 24 h</span></div></div>' +
+      '<div class="stack" role="img" aria-label="Estado de las alertas">' + ESTADOS.map(function (e) { return cEst[e[0]] ? '<span title="' + e[0] + ': ' + cEst[e[0]] + '" style="width:' + (cEst[e[0]] / alR.length * 100) + '%;background:' + e[1] + '"></span>' : ''; }).join('') + '</div>' +
+      '<div class="legend">' + ESTADOS.map(function (e) { return '<span><i style="background:' + e[1] + '"></i>' + e[0] + ' · ' + (cEst[e[0]] || 0) + '</span>'; }).join('') + '</div>' +
+      '<div class="grid2" style="gap:24px"><div class="q"><h3>Motivos más frecuentes</h3>' + topMot.map(function (k) {
+          return '<div class="qr"><span>' + esc(k) + '</span><span class="bar"><i style="width:' + (motivos[k] / alR.length * 100) + '%;background:var(--red)"></i></span><span class="v">' + motivos[k] + '</span></div>';
+        }).join('') + '</div>' +
+        '<div class="q"><h3>Últimas alertas trabajadas</h3>' + (trabajadas.length ? '<ul class="list">' + trabajadas.map(function (r) {
+          var ult = r.nota ? r.nota.split('\n').pop() : '';
+          return '<li><span class="pill ' + (r.est === 'Resuelta' ? 'g' : 'a') + '">' + esc(r.est) + '</span><span><b>' + esc(r.cli || 'Cliente') + '</b> <small class="sub">· ' + esc(r.m) + ' · ' + fCorta(r) + (r.agente ? ' · ' + esc(r.agente) : '') + '</small>' + (ult ? '<br><small class="sub">' + esc(ult) + '</small>' : '') + '</span></li>';
+        }).join('') + '</ul>' : '<p class="sub">Todavía no se ha trabajado ninguna alerta de este periodo.</p>') + '</div></div>') +
+      '</section>';
+
+    var coms = R.filter(function (r) { return r.com; }).sort(function (a, b) { return b._d - a._d; }).slice(0, 8);
+
+    // KPIs
+    var kp = ['<div class="kpi"><span class="l">Encuestas</span><b>' + fmt(R.length) + '</b><span>' + encDepto + '</span></div>',
+      '<div class="kpi"><span class="l">Satisfacción general</span><b class="' + (sat != null && sat < 3 ? 'bad' : '') + '">' + d1(sat) + '<small style="font-size:13px;color:var(--muted)"> de 5</small></b><span>promedio</span></div>'];
+    if (hay5 && indR.prom != null) kp.push('<div class="kpi"><span class="l">Preguntas de la compra</span><b class="' + (indR.prom <= 3.5 ? 'bad' : '') + '">' + d1(indR.prom) + '<small style="font-size:13px;color:var(--muted)"> de 5</small></b><span>promedio de ' + ps.filter(function (p) { return p.tipo === 'escala'; }).length + ' preguntas</span></div>');
+    if (!hay5 && indR.pctSi != null) kp.push('<div class="kpi"><span class="l">Respuestas positivas</span><b class="' + (indR.pctSi < 80 ? 'bad' : '') + '">' + indR.pctSi + '%</b><span>«Sí» en las preguntas de la visita</span></div>');
+    if (rec.length) kp.push('<div class="kpi"><span class="l">Nos recomendaría</span><b class="' + (recSi / rec.length < 0.8 ? 'bad' : '') + '">' + Math.round(recSi / rec.length * 100) + '%</b><span>' + fmt(recSi) + ' de ' + fmt(rec.length) + ' dicen que sí</span></div>');
+    kp.push('<div class="kpi"><span class="l">Clic en reseña</span><b>' + (clic == null ? '—' : clic) + '%</b><span>de las encuestas</span></div>',
+      '<div class="kpi"><span class="l">Alertas abiertas</span><b class="' + (abiertas.length ? 'bad' : '') + '">' + fmt(abiertas.length) + '</b><span>' + fmt(alR.length) + ' en total</span></div>');
+
+    $('pEncuestas').innerHTML = cabecera('Encuestas de ' + encDepto.toLowerCase(), { pagina: 'alertas', texto: 'Ir a Alertas' }) +
+      (R.length ? '<section class="kpis">' + kp.join('') + '</section>' : '<section class="panel"><p class="empty">No hay encuestas de ' + encDepto.toLowerCase() + ' para ' + (encMarca === 'Todas' ? 'estas marcas' : esc(encMarca)) + ' en este periodo.</p></section>') +
+      '<section class="panel"><h2>' + encDepto + ' por marca</h2><div class="tbl"><table><thead><tr><th>Marca</th><th>Encuestas</th><th>Satisfacción</th><th>' + indTit + '</th><th>Clic reseña</th><th>Alertas abiertas</th></tr></thead><tbody>' + filasMarca + '</tbody></table></div>' +
+        '<p class="sub" style="font-size:12px">«—» = sin encuestas en el periodo. Clic en una marca para filtrar.</p></section>' +
+      (R.length ? '<div class="grid2">' +
+        '<section class="panel"><h2>Respuestas por pregunta</h2>' + (preg || '<p class="sub">Sin respuestas a las preguntas en este periodo.</p>') + '</section>' +
+        '<section class="panel"><h2>Resultados por ' + quien.toLowerCase() + '</h2><div class="tbl"><table><thead><tr><th>' + quien + '</th>' +
+          '<th data-ord="n">Encuestas' + flecha('n') + '</th><th data-ord="sat">Satisf.' + flecha('sat') + '</th><th data-ord="ivn">' + indTit + flecha('ivn') + '</th><th data-ord="al">Alertas' + flecha('al') + '</th></tr></thead><tbody>' + filasA + '</tbody></table></div>' +
+          '<p class="sub" style="font-size:12px">' + (hay5 ? 'Preguntas (1–5): promedio de las preguntas de la compra; en rojo, 3.5 o menos.' : 'Preguntas (% Sí): respuestas «Sí» en las preguntas de la visita; en rojo, menos de 80%.') + ' Clic en un encabezado para ordenar.</p>' +
+          '<details class="more"><summary>Ver detalle por pregunta</summary><div class="tbl"><table><thead><tr><th>' + quien + '</th>' + ps.map(function (p) { return '<th title="' + esc(p.titulo) + '">' + esc(p.corto) + '</th>'; }).join('') + '</tr></thead><tbody>' + detalleA + '</tbody></table></div></details>' +
+        '</section></div>' : '') +
+      (R.length ? resumenAl : '') +
+      (coms.length ? '<section class="panel"><h2>Comentarios recientes</h2><ul class="list">' + coms.map(function (r) {
+        return '<li><span class="pill ' + (r.sat != null && r.sat < 3 ? 'r' : 'n') + '">' + (r.sat == null ? '—' : r.sat) + ' de 5</span><span>“' + esc(r.com) + '”<br><small class="sub">' + esc(r.m) + ' · ' + fCorta(r) + (r.as ? ' · ' + esc(r.as) : '') + '</small></span></li>';
+      }).join('') + '</ul></section>' : '');
+    enlazarFiltros();
+  }
+
+  /* ============================== ALERTAS (para trabajar) ============================== */
+  function renderAlertas() {
+    var D = encData;
+    var R = D.respuestas.filter(function (r) { return r.al && enPeriodo(r) && r.d === encDepto && (encMarca === 'Todas' || r.m === encMarca); });
+    var quien = encDepto === 'Servicio' ? 'Asesor' : 'Vendedor';
+    var cEst = {}; R.forEach(function (r) { cEst[r.est] = (cEst[r.est] || 0) + 1; });
+    var abiertas = R.filter(function (r) { return r.est !== 'Resuelta'; });
+    var tr = horasResp(R);
+    var al = R.filter(function (r) { return encAl === 'Todas' || r.est !== 'Resuelta'; })
+      .sort(function (a, b) { return encAl === 'Todas' ? b._d - a._d : a._d - b._d; }); // abiertas: la más vieja primero
+    var alHtml = al.map(function (r) {
+      var cls = r.est === 'Resuelta' ? 'res' : (r.est === 'En proceso' || r.est === 'No contesta') ? 'proc' : '';
+      var pill = r.est === 'Resuelta' ? 'g' : (r.est === 'En proceso' || r.est === 'No contesta') ? 'a' : 'r';
+      var dias = Math.floor((Date.now() - r._d) / 864e5);
+      return '<article class="alert ' + cls + '" data-id="' + esc(r.id) + '">' +
+        '<div class="hd"><span class="pill ' + pill + '">' + esc(r.est) + '</span><b>' + esc(r.cli || 'Cliente sin nombre') + '</b><span class="sub">' + esc(r.m) + ' · ' + fCorta(r) + (r.est !== 'Resuelta' ? ' · ' + (dias === 0 ? 'hoy' : dias === 1 ? 'hace 1 día' : 'hace ' + dias + ' días') : '') + '</span></div>' +
+        '<div class="meta"><span>Motivo: <b>' + esc(r.mot || '—') + '</b></span><span>Satisfacción <b>' + (r.sat == null ? '—' : r.sat) + ' de 5</b></span>' +
+        (r.tel ? '<span>Teléfono <b>' + esc(r.tel) + '</b></span>' : '') + (r.as ? '<span>' + quien + ' <b>' + esc(r.as) + '</b></span>' : '') +
+        (r.agente ? '<span>Agente <b>' + esc(r.agente) + '</b></span>' : '') + (r.ac ? '' : '<span class="pill a">No acepta contacto</span>') + '</div>' +
+        (r.com ? '<pre>“' + esc(r.com) + '”</pre>' : '') + (r.nota ? '<pre>' + esc(r.nota) + '</pre>' : '') +
+        (r.est !== 'Resuelta' ? '<label class="sr" for="n_' + esc(r.id) + '">Nota de seguimiento</label><textarea id="n_' + esc(r.id) + '" placeholder="Escriba la nota de seguimiento (contacto realizado, acuerdo, próximo paso)…"></textarea>' +
+          '<div class="acts"><button type="button" class="btn ghost sm" data-seg="nota">Anotar seguimiento</button><button type="button" class="btn green sm" data-seg="resolver">Marcar como resuelta</button></div>' : '') +
+        '</article>';
+    }).join('');
+    var kp = ['<div class="kpi"><span class="l">Abiertas</span><b class="' + (abiertas.length ? 'bad' : '') + '">' + fmt(abiertas.length) + '</b><span>por trabajar</span></div>']
+      .concat(ESTADOS.map(function (e) { return '<div class="kpi"><span class="l">' + e[0] + '</span><b>' + fmt(cEst[e[0]] || 0) + '</b><span>' + (e[0] === 'Resuelta' ? 'cerradas' : 'alertas') + '</span></div>'; }))
+      .concat(['<div class="kpi"><span class="l">Tiempo de respuesta</span><b>' + tr.txt + '</b><span>' + (R.length ? Math.round(tr.en24 / R.length * 100) + '% en menos de 24 h' : 'sin alertas') + '</span></div>']);
+
+    $('pEncuestas').innerHTML = cabecera('Alertas de encuestas', { pagina: 'dashboard', texto: 'Ver dashboard' }) +
+      '<section class="kpis">' + kp.join('') + '</section>' +
+      '<section class="panel"><div class="hd2"><h2>' + (encAl === 'Pendientes' ? 'Alertas abiertas' : 'Todas las alertas') + '</h2>' +
+        '<div class="stabs" style="border:0"><button type="button" data-al="Pendientes" aria-selected="' + (encAl === 'Pendientes') + '">Abiertas · ' + abiertas.length + '</button><button type="button" data-al="Todas" aria-selected="' + (encAl === 'Todas') + '">Todas · ' + R.length + '</button></div></div>' +
+        (encAl === 'Pendientes' && al.length ? '<p class="sub" style="font-size:12px">Ordenadas de la más vieja a la más nueva.</p>' : '') +
+        (alHtml || '<p class="empty">No hay alertas ' + (encAl === 'Pendientes' ? 'abiertas ' : '') + 'en este periodo.</p>') + '</section>';
+    enlazarFiltros();
+  }
+
+  $('pEncuestas').addEventListener('click', async function (e) {
+    var dp = e.target.closest('[data-dep]'); if (dp) { encDepto = dp.dataset.dep; store.set('depto', encDepto); ordA = { k: 'n', dir: -1 }; render(); return; }
+    var a = e.target.closest('[data-al]'); if (a) { encAl = a.dataset.al; render(); return; }
+    var m = e.target.closest('[data-encm]'); if (m) { e.preventDefault(); encMarca = m.dataset.encm; render(); return; }
+    var o = e.target.closest('th[data-ord]'); if (o) { var k = o.dataset.ord; ordA = { k: k, dir: ordA.k === k ? -ordA.dir : -1 }; render(); return; }
+    var s = e.target.closest('[data-seg]'); if (!s) return;
+    var art = s.closest('.alert'), id = art.dataset.id, ta = art.querySelector('textarea'), resolver = s.dataset.seg === 'resolver';
+    if (!resolver && !ta.value.trim()) { ta.focus(); toast('Escriba la nota de seguimiento.'); return; }
+    art.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+    try {
+      var r = await run('seguimientoAlerta', CFG.key, id, ta.value, resolver);
+      var x = encData.respuestas.filter(function (q) { return q.id === id; })[0];
+      if (x) { x.est = r.est; x.nota = r.nota; if (r.fechaContacto && !x.fc) x.fc = new Date(r.fechaContacto); }
+      toast(resolver ? 'Alerta marcada como resuelta.' : 'Seguimiento anotado.');
+      render();
+    } catch (err) { toast(err && err.message || 'No se pudo guardar.'); art.querySelectorAll('button').forEach(function (b) { b.disabled = false; }); }
+  });
+
+  setInterval(function () { cargar(true); }, 5 * 60 * 1000);
+  cargar();
+};
+</script>
+<script>
+  var API = 'https://script.google.com/macros/s/AKfycbyMmDTy5B23t_8Fshe-XnW9q1lHcSTq9MBFJgSHFy02weUi0giDLR7fJeGGGvpWfwBG5Q/exec';
+  var CFG = {};
+  (function () {
+    var q = new URLSearchParams(location.search), key = q.get('key') || '';
+    var main = document.getElementById('pEncuestas');
+    if (!key) { main.innerHTML = '<div class="err">Falta la clave en el enlace. Use el enlace completo que le compartieron.</div>'; return; }
+    fetch(API + '?page=api&key=' + encodeURIComponent(key) + (q.get('depto') ? '&depto=' + encodeURIComponent(q.get('depto')) : ''))
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.error) throw new Error(d.error);
+        CFG = d.cfg; window.__primeros = d.rows; window.__iniciar();
+      })
+      .catch(function (e) { main.innerHTML = '<div class="err">No se pudieron cargar los datos: ' + String(e && e.message || e).replace(/</g, '&lt;') + '</div>'; });
+  })();
+</script>
+</body>
+</html>
