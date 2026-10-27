@@ -462,16 +462,42 @@ window.__iniciar = function () {
   var API = 'https://script.google.com/macros/s/AKfycbyMmDTy5B23t_8Fshe-XnW9q1lHcSTq9MBFJgSHFy02weUi0giDLR7fJeGGGvpWfwBG5Q/exec';
   var CFG = {};
   (function () {
-    var q = new URLSearchParams(location.search), key = q.get('key') || '';
-    var main = document.getElementById('pEncuestas');
-    if (!key) { main.innerHTML = '<div class="err">Falta la clave en el enlace. Use el enlace completo que le compartieron.</div>'; return; }
-    fetch(API + '?page=api&key=' + encodeURIComponent(key) + (q.get('depto') ? '&depto=' + encodeURIComponent(q.get('depto')) : ''))
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        if (d.error) throw new Error(d.error);
-        CFG = d.cfg; window.__primeros = d.rows; window.__iniciar();
-      })
-      .catch(function (e) { main.innerHTML = '<div class="err">No se pudieron cargar los datos: ' + String(e && e.message || e).replace(/</g, '&lt;') + '</div>'; });
+    // La clave nunca va en el código ni en GitHub: se escribe una vez y queda guardada en este navegador.
+    var GUARDA = 'enc_clave', q = new URLSearchParams(location.search), main = document.getElementById('pEncuestas');
+    var leer = function () { try { return localStorage.getItem(GUARDA) || ''; } catch (e) { return ''; } };
+    var guardar = function (k) { try { k ? localStorage.setItem(GUARDA, k) : localStorage.removeItem(GUARDA); } catch (e) {} };
+    var escH = function (t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
+    // Si la clave vino en el enlace, se guarda y se quita de la barra de direcciones.
+    if (q.get('key')) { guardar(q.get('key')); q.delete('key'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '')); }
+    function pedirClave(msg) {
+      main.innerHTML = '<section class="panel" style="max-width:420px;margin:40px auto">' +
+        '<h2>Acceso al dashboard</h2><p class="sub">Escriba la clave de acceso que le dio la administración. Se guarda en este navegador.</p>' +
+        (msg ? '<div class="err">' + escH(msg) + '</div>' : '') +
+        '<form id="fClave" style="display:flex;flex-direction:column;gap:10px"><label for="iClave" style="font-weight:600;font-size:13px">Clave de acceso</label>' +
+        '<input id="iClave" type="password" autocomplete="current-password" required style="min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)">' +
+        '<button type="submit" class="btn" style="min-height:44px;border:0;border-radius:8px;background:var(--navy);color:#fff;font-weight:600">Entrar</button></form></section>';
+      document.getElementById('fClave').onsubmit = function (e) { e.preventDefault(); var k = document.getElementById('iClave').value.trim(); if (k) { guardar(k); entrar(); } };
+      document.getElementById('iClave').focus();
+    }
+    function entrar() {
+      var key = leer();
+      if (!key) return pedirClave('');
+      main.innerHTML = '<div class="loading">Cargando…</div>';
+      fetch(API + '?page=api&key=' + encodeURIComponent(key) + (q.get('depto') ? '&depto=' + encodeURIComponent(q.get('depto')) : ''))
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d.error) { guardar(''); return pedirClave('La clave no es válida. Verifíquela con la administración.'); }
+          CFG = d.cfg; window.__primeros = d.rows; window.__iniciar();
+          // Botón para salir (olvida la clave en este equipo)
+          var hd = document.querySelector('header.top .seg');
+          if (hd && !document.getElementById('bSalir')) {
+            var b = document.createElement('button'); b.type = 'button'; b.id = 'bSalir'; b.textContent = 'Salir'; b.title = 'Olvidar la clave en este equipo';
+            b.onclick = function () { guardar(''); location.reload(); }; hd.appendChild(b);
+          }
+        })
+        .catch(function (e) { main.innerHTML = '<div class="err">No se pudieron cargar los datos: ' + escH(e && e.message || e) + '</div>'; });
+    }
+    entrar();
   })();
 </script>
 </body>
