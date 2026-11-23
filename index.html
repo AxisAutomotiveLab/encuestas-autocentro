@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<title>Encuestas de satisfacción · La Voz del Cliente</title>
+<title>Alertas de encuestas · La Voz del Cliente</title>
 <meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -104,6 +104,8 @@ details.more[open] summary{margin-bottom:8px}
 .golink{margin-left:auto;font-weight:600;font-size:13px;color:var(--blue);text-decoration:none}
 .golink:hover{text-decoration:underline}
 .hd2{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center}
+.agsel{min-height:44px;padding:0 12px;border:1px solid var(--inl);border-radius:8px;background:var(--panel);width:100%;max-width:380px}
+.agsel.falta{border-color:var(--red);box-shadow:0 0 0 2px var(--errbg)}
 </style>
 </head>
 <body>
@@ -135,6 +137,9 @@ window.__iniciar = function () {
   };
   var encData = null, encPer = '30', encAl = 'Pendientes', encMarca = 'Todas', encDepto = CFG.deptoInicial || store.get('depto', DEPTOS[0]), ordA = { k: 'n', dir: -1 };
   if (DEPTOS.indexOf(encDepto) === -1) encDepto = DEPTOS[0];
+  var AGENTES = CFG.agentes || [];
+  var agente = store.get('agente', '');
+  if (AGENTES.length && AGENTES.indexOf(agente) === -1) agente = '';
   var ESTADOS = [['Pendiente', 'var(--red)'], ['En proceso', 'var(--amber)'], ['No contesta', 'var(--faint)'], ['Resuelta', 'var(--green)']];
 
   if (CFG.logoUrl) { var im = document.createElement('img'); im.src = CFG.logoUrl; im.alt = ''; $('logo').textContent = ''; $('logo').appendChild(im); }
@@ -163,16 +168,19 @@ window.__iniciar = function () {
   function toast(m) { var t = document.createElement('div'); t.className = 'toast'; t.textContent = m; document.body.appendChild(t); setTimeout(function () { t.remove(); }, 3200); }
   function run(fn) {
     var args = Array.prototype.slice.call(arguments, 1);
-    if (fn !== 'getDashboardData') return Promise.reject(new Error('Esta acción solo está disponible en el enlace de Alertas.'));
-    if (window.__primeros) { var p = window.__primeros; window.__primeros = null; return Promise.resolve(p); } // primera carga: ya vino con la configuración
-    return fetch(API + '?page=api&key=' + encodeURIComponent(CFG.key)).then(function (r) { return r.json(); })
-      .then(function (d) { if (d.error) throw new Error(d.error); return d.rows; });
+    if (fn === 'getDashboardData') {
+      if (window.__primeros) { var p = window.__primeros; window.__primeros = null; return Promise.resolve(p); } // primera carga: ya vino con la configuración
+      return getApi({ page: 'api', key: CFG.key, modo: CFG.modo }).then(function (d) { return d.rows; });
+    }
+    if (fn === 'seguimientoAlerta') return postApi({ accion: 'seguimiento', key: args[0], id: args[1], nota: args[2], resolver: args[3], agente: args[4] });
+    return Promise.reject(new Error('Acción no disponible.'));
   }
   function preguntasDe(d) { return PREG.filter(function (q) { return q.deptos.indexOf(d) !== -1; }); }
   function esSi(x) { return /^s[ií]/i.test(String(x || '')); }
-  function enlace(pagina) { // a la otra página (dashboard ↔ alertas) con la misma clave
-    if (!CFG.baseUrl) return '';
-    return CFG.baseUrl + '?page=' + pagina + (UNO || encDepto ? '&depto=' + encodeURIComponent(encDepto.toLowerCase()) : '') + '&key=' + encodeURIComponent(CFG.key);
+  function enlace(pagina) { // a la otra página (dashboard ↔ alertas) con la misma clave, dentro de GitHub
+    if (!CFG.key) return '';
+    var raiz = location.pathname.replace(/alertas\/(index\.html)?$/, '').replace(/index\.html$/, '');
+    return raiz + (pagina === 'alertas' ? 'alertas/' : '') + '?key=' + encodeURIComponent(CFG.key) + (encDepto ? '&depto=' + encodeURIComponent(encDepto.toLowerCase()) : '');
   }
   function horasResp(rs) { // tiempo de respuesta a alertas
     var h = rs.filter(function (r) { return r.fc; }).map(function (r) { return (r.fc - r._d) / 36e5; }).filter(function (x) { return x >= 0; });
@@ -427,13 +435,21 @@ window.__iniciar = function () {
       .concat(ESTADOS.map(function (e) { return '<div class="kpi"><span class="l">' + e[0] + '</span><b>' + fmt(cEst[e[0]] || 0) + '</b><span>' + (e[0] === 'Resuelta' ? 'cerradas' : 'alertas') + '</span></div>'; }))
       .concat(['<div class="kpi"><span class="l">Tiempo de respuesta</span><b>' + tr.txt + '</b><span>' + (R.length ? Math.round(tr.en24 / R.length * 100) + '% en menos de 24 h' : 'sin alertas') + '</span></div>']);
 
-    $('pEncuestas').innerHTML = cabecera('Alertas de encuestas', { pagina: 'dashboard', texto: 'Ver dashboard' }) +
+    var agHtml = '<section class="panel"><h2>¿Quién está trabajando las alertas?</h2>' +
+      (AGENTES.length
+        ? '<label class="sr" for="selAgente">Agente</label><select id="selAgente" class="agsel"><option value="">Seleccione su nombre</option>' +
+          AGENTES.map(function (n) { return '<option' + (n === agente ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select>'
+        : '<label class="sr" for="selAgente">Agente</label><input id="selAgente" class="agsel" placeholder="Escriba su nombre y apellido" value="' + esc(agente) + '">') +
+      '<p class="sub" style="font-size:12px">Su nombre queda en cada nota y en la columna Agente del Sheet. Este equipo lo recuerda.</p></section>';
+    $('pEncuestas').innerHTML = cabecera('Alertas de encuestas', { pagina: 'dashboard', texto: 'Ver dashboard' }) + agHtml +
       '<section class="kpis">' + kp.join('') + '</section>' +
       '<section class="panel"><div class="hd2"><h2>' + (encAl === 'Pendientes' ? 'Alertas abiertas' : 'Todas las alertas') + '</h2>' +
         '<div class="stabs" style="border:0"><button type="button" data-al="Pendientes" aria-selected="' + (encAl === 'Pendientes') + '">Abiertas · ' + abiertas.length + '</button><button type="button" data-al="Todas" aria-selected="' + (encAl === 'Todas') + '">Todas · ' + R.length + '</button></div></div>' +
         (encAl === 'Pendientes' && al.length ? '<p class="sub" style="font-size:12px">Ordenadas de la más vieja a la más nueva.</p>' : '') +
         (alHtml || '<p class="empty">No hay alertas ' + (encAl === 'Pendientes' ? 'abiertas ' : '') + 'en este periodo.</p>') + '</section>';
     enlazarFiltros();
+    var sa = $('selAgente');
+    if (sa) sa.onchange = sa.oninput = function () { agente = sa.value.trim(); store.set('agente', agente); sa.classList.remove('falta'); };
   }
 
   $('pEncuestas').addEventListener('click', async function (e) {
@@ -443,12 +459,13 @@ window.__iniciar = function () {
     var o = e.target.closest('th[data-ord]'); if (o) { var k = o.dataset.ord; ordA = { k: k, dir: ordA.k === k ? -ordA.dir : -1 }; render(); return; }
     var s = e.target.closest('[data-seg]'); if (!s) return;
     var art = s.closest('.alert'), id = art.dataset.id, ta = art.querySelector('textarea'), resolver = s.dataset.seg === 'resolver';
+    if (!agente) { var sa = $('selAgente'); if (sa) { sa.classList.add('falta'); sa.focus(); sa.scrollIntoView({ block: 'center' }); } toast('Seleccione su nombre antes de guardar.'); return; }
     if (!resolver && !ta.value.trim()) { ta.focus(); toast('Escriba la nota de seguimiento.'); return; }
     art.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
     try {
-      var r = await run('seguimientoAlerta', CFG.key, id, ta.value, resolver);
+      var r = await run('seguimientoAlerta', CFG.key, id, ta.value, resolver, agente);
       var x = encData.respuestas.filter(function (q) { return q.id === id; })[0];
-      if (x) { x.est = r.est; x.nota = r.nota; if (r.fechaContacto && !x.fc) x.fc = new Date(r.fechaContacto); }
+      if (x) { x.est = r.est; x.nota = r.nota; x.agente = r.agente || agente; if (r.fechaContacto && !x.fc) x.fc = new Date(r.fechaContacto); }
       toast(resolver ? 'Alerta marcada como resuelta.' : 'Seguimiento anotado.');
       render();
     } catch (err) { toast(err && err.message || 'No se pudo guardar.'); art.querySelectorAll('button').forEach(function (b) { b.disabled = false; }); }
@@ -460,44 +477,27 @@ window.__iniciar = function () {
 </script>
 <script>
   var API = 'https://script.google.com/macros/s/AKfycbyMmDTy5B23t_8Fshe-XnW9q1lHcSTq9MBFJgSHFy02weUi0giDLR7fJeGGGvpWfwBG5Q/exec';
+  // Llama a la app de encuestas. GET para leer datos; POST (texto) para guardar, sin pedir permisos extra al navegador.
+  function postApi(o, beacon) {
+    var body = JSON.stringify(o);
+    if (beacon && navigator.sendBeacon) { navigator.sendBeacon(API, new Blob([body], { type: 'text/plain' })); return Promise.resolve(); }
+    return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: body })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (d.error) throw new Error(d.error); return d.data; });
+  }
+  function getApi(params) {
+    return fetch(API + '?' + new URLSearchParams(params)).then(function (r) { return r.json(); })
+      .then(function (d) { if (d.error) throw new Error(d.error); return d; });
+  }
   var CFG = {};
   (function () {
-    // La clave nunca va en el código ni en GitHub: se escribe una vez y queda guardada en este navegador.
-    var GUARDA = 'enc_clave', q = new URLSearchParams(location.search), main = document.getElementById('pEncuestas');
-    var leer = function () { try { return localStorage.getItem(GUARDA) || ''; } catch (e) { return ''; } };
-    var guardar = function (k) { try { k ? localStorage.setItem(GUARDA, k) : localStorage.removeItem(GUARDA); } catch (e) {} };
-    var escH = function (t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;'); };
-    // Si la clave vino en el enlace, se guarda y se quita de la barra de direcciones.
-    if (q.get('key')) { guardar(q.get('key')); q.delete('key'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '')); }
-    function pedirClave(msg) {
-      main.innerHTML = '<section class="panel" style="max-width:420px;margin:40px auto">' +
-        '<h2>Acceso al dashboard</h2><p class="sub">Escriba la clave de acceso que le dio la administración. Se guarda en este navegador.</p>' +
-        (msg ? '<div class="err">' + escH(msg) + '</div>' : '') +
-        '<form id="fClave" style="display:flex;flex-direction:column;gap:10px"><label for="iClave" style="font-weight:600;font-size:13px">Clave de acceso</label>' +
-        '<input id="iClave" type="password" autocomplete="current-password" required style="min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)">' +
-        '<button type="submit" class="btn" style="min-height:44px;border:0;border-radius:8px;background:var(--navy);color:#fff;font-weight:600">Entrar</button></form></section>';
-      document.getElementById('fClave').onsubmit = function (e) { e.preventDefault(); var k = document.getElementById('iClave').value.trim(); if (k) { guardar(k); entrar(); } };
-      document.getElementById('iClave').focus();
-    }
-    function entrar() {
-      var key = leer();
-      if (!key) return pedirClave('');
-      main.innerHTML = '<div class="loading">Cargando…</div>';
-      fetch(API + '?page=api&key=' + encodeURIComponent(key) + (q.get('depto') ? '&depto=' + encodeURIComponent(q.get('depto')) : ''))
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-          if (d.error) { guardar(''); return pedirClave('La clave no es válida. Verifíquela con la administración.'); }
-          CFG = d.cfg; window.__primeros = d.rows; window.__iniciar();
-          // Botón para salir (olvida la clave en este equipo)
-          var hd = document.querySelector('header.top .seg');
-          if (hd && !document.getElementById('bSalir')) {
-            var b = document.createElement('button'); b.type = 'button'; b.id = 'bSalir'; b.textContent = 'Salir'; b.title = 'Olvidar la clave en este equipo';
-            b.onclick = function () { guardar(''); location.reload(); }; hd.appendChild(b);
-          }
-        })
-        .catch(function (e) { main.innerHTML = '<div class="err">No se pudieron cargar los datos: ' + escH(e && e.message || e) + '</div>'; });
-    }
-    entrar();
+    var q = new URLSearchParams(location.search), key = q.get('key') || '';
+    var main = document.getElementById('pEncuestas');
+    if (!key) { main.innerHTML = '<div class="err">Este enlace está incompleto. Use el enlace completo que le compartió la administración.</div>'; return; }
+    var p = { page: 'api', key: key, modo: 'alertas' };
+    if (q.get('depto')) p.depto = q.get('depto');
+    getApi(p).then(function (d) { CFG = d.cfg; window.__primeros = d.rows; window.__iniciar(); })
+      .catch(function (e) { main.innerHTML = '<div class="err">No se pudieron cargar los datos: ' + String(e && e.message || e).replace(/</g, '&lt;') + '</div>'; });
   })();
 </script>
 </body>
