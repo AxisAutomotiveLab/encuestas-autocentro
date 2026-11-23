@@ -140,6 +140,7 @@ window.__iniciar = function () {
   var AGENTES = CFG.agentes || [];
   var agente = store.get('agente', '');
   if (AGENTES.length && AGENTES.indexOf(agente) === -1) agente = '';
+  if (CFG.agenteSesion) agente = CFG.agenteSesion;
   var ESTADOS = [['Pendiente', 'var(--red)'], ['En proceso', 'var(--amber)'], ['No contesta', 'var(--faint)'], ['Resuelta', 'var(--green)']];
 
   if (CFG.logoUrl) { var im = document.createElement('img'); im.src = CFG.logoUrl; im.alt = ''; $('logo').textContent = ''; $('logo').appendChild(im); }
@@ -170,17 +171,24 @@ window.__iniciar = function () {
     var args = Array.prototype.slice.call(arguments, 1);
     if (fn === 'getDashboardData') {
       if (window.__primeros) { var p = window.__primeros; window.__primeros = null; return Promise.resolve(p); } // primera carga: ya vino con la configuración
-      return getApi({ page: 'api', key: CFG.key, modo: CFG.modo }).then(function (d) { return d.rows; });
+      return pedirDatos().then(function (d) { return d.rows; });
     }
-    if (fn === 'seguimientoAlerta') return postApi({ accion: 'seguimiento', key: args[0], id: args[1], nota: args[2], resolver: args[3], agente: args[4] });
+    if (fn === 'seguimientoAlerta') {
+      var ses = leerSes();
+      if (!CFG.key && ses) return postApi({ accion: 'seguimiento', token: ses.token, id: args[1], nota: args[2], resolver: args[3] })
+        .catch(function (e) { if (e.message === 'SESION') { guardarSes(null); location.reload(); } throw e; });
+      return postApi({ accion: 'seguimiento', key: args[0], id: args[1], nota: args[2], resolver: args[3], agente: args[4] });
+    }
     return Promise.reject(new Error('Acción no disponible.'));
   }
   function preguntasDe(d) { return PREG.filter(function (q) { return q.deptos.indexOf(d) !== -1; }); }
   function esSi(x) { return /^s[ií]/i.test(String(x || '')); }
   function enlace(pagina) { // a la otra página (dashboard ↔ alertas) con la misma clave, dentro de GitHub
-    if (!CFG.key) return '';
     var raiz = location.pathname.replace(/alertas\/(index\.html)?$/, '').replace(/index\.html$/, '');
-    return raiz + (pagina === 'alertas' ? 'alertas/' : '') + '?key=' + encodeURIComponent(CFG.key) + (encDepto ? '&depto=' + encodeURIComponent(encDepto.toLowerCase()) : '');
+    var qs = [];
+    if (CFG.key) qs.push('key=' + encodeURIComponent(CFG.key));
+    if (encDepto) qs.push('depto=' + encodeURIComponent(encDepto.toLowerCase()));
+    return raiz + (pagina === 'alertas' ? 'alertas/' : '') + (qs.length ? '?' + qs.join('&') : '');
   }
   function horasResp(rs) { // tiempo de respuesta a alertas
     var h = rs.filter(function (r) { return r.fc; }).map(function (r) { return (r.fc - r._d) / 36e5; }).filter(function (x) { return x >= 0; });
@@ -435,7 +443,8 @@ window.__iniciar = function () {
       .concat(ESTADOS.map(function (e) { return '<div class="kpi"><span class="l">' + e[0] + '</span><b>' + fmt(cEst[e[0]] || 0) + '</b><span>' + (e[0] === 'Resuelta' ? 'cerradas' : 'alertas') + '</span></div>'; }))
       .concat(['<div class="kpi"><span class="l">Tiempo de respuesta</span><b>' + tr.txt + '</b><span>' + (R.length ? Math.round(tr.en24 / R.length * 100) + '% en menos de 24 h' : 'sin alertas') + '</span></div>']);
 
-    var agHtml = '<section class="panel"><h2>¿Quién está trabajando las alertas?</h2>' +
+    var agHtml = CFG.agenteSesion ? '<section class="panel"><p class="sub" style="margin:0">Trabajando como <b>' + esc(CFG.agenteSesion) + '</b>. Cada nota queda con su nombre y en la columna Agente del Sheet.</p></section>' :
+      '<section class="panel"><h2>¿Quién está trabajando las alertas?</h2>' +
       (AGENTES.length
         ? '<label class="sr" for="selAgente">Agente</label><select id="selAgente" class="agsel"><option value="">Seleccione su nombre</option>' +
           AGENTES.map(function (n) { return '<option' + (n === agente ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select>'
@@ -490,15 +499,84 @@ window.__iniciar = function () {
       .then(function (d) { if (d.error) throw new Error(d.error); return d; });
   }
   var CFG = {};
-  (function () {
-    var q = new URLSearchParams(location.search), key = q.get('key') || '';
+  var SES = 'enc_sesion';
+  function leerSes() { try { return JSON.parse(localStorage.getItem(SES) || 'null'); } catch (e) { return null; } }
+  function guardarSes(v) { try { v ? localStorage.setItem(SES, JSON.stringify(v)) : localStorage.removeItem(SES); } catch (e) {} }
+  function escH(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+  var Q = new URLSearchParams(location.search), MODO_PAG = 'dashboard';
+  // Pantalla de entrada: email corporativo y código de 6 dígitos que llega por email.
+  function pantallaEntrada(msg, email) {
     var main = document.getElementById('pEncuestas');
-    if (!key) { main.innerHTML = '<div class="err">Este enlace está incompleto. Use el enlace completo que le compartió la administración.</div>'; return; }
-    var p = { page: 'api', key: key, modo: 'dashboard' };
-    if (q.get('depto')) p.depto = q.get('depto');
-    getApi(p).then(function (d) { CFG = d.cfg; window.__primeros = d.rows; window.__iniciar(); })
-      .catch(function (e) { main.innerHTML = '<div class="err">No se pudieron cargar los datos: ' + String(e && e.message || e).replace(/</g, '&lt;') + '</div>'; });
-  })();
+    main.innerHTML = '<section class="panel" style="max-width:440px;margin:40px auto">' +
+      '<h2>Entrar con su email corporativo</h2>' +
+      '<p class="sub">Le enviaremos un código de 6 dígitos. Este equipo lo recordará por 30 días.</p>' +
+      (msg ? '<div class="err" role="alert">' + escH(msg) + '</div>' : '') +
+      '<form id="fEmail" style="display:flex;flex-direction:column;gap:10px">' +
+      '<label for="iEmail" style="font-weight:600;font-size:13px">Email corporativo</label>' +
+      '<input id="iEmail" class="agsel" style="max-width:none" type="email" autocomplete="username" placeholder="nombre.apellido@autocentropr.com" value="' + escH(email || '') + '" required>' +
+      '<button type="submit" class="btn" id="bEmail">Enviar código</button></form>' +
+      '<form id="fCodigo" style="display:none;flex-direction:column;gap:10px">' +
+      '<p class="sub" id="pDestino"></p>' +
+      '<label for="iCodigo" style="font-weight:600;font-size:13px">Código de verificación</label>' +
+      '<input id="iCodigo" class="agsel" style="max-width:none;font-size:22px;letter-spacing:.3em" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" required>' +
+      '<button type="submit" class="btn" id="bCodigo">Entrar</button>' +
+      '<p class="sub" style="font-size:12px">Si no le llega, revise la carpeta de correo no deseado o la cuarentena de Microsoft 365. <a href="#" id="aOtro">Usar otro email</a></p></form></section>';
+    var em = '';
+    document.getElementById('fEmail').onsubmit = function (e) {
+      e.preventDefault(); em = document.getElementById('iEmail').value.trim();
+      var b = document.getElementById('bEmail'); b.disabled = true; b.textContent = 'Enviando…';
+      postApi({ accion: 'pedirCodigo', email: em }).then(function () {
+        document.getElementById('fEmail').style.display = 'none';
+        document.getElementById('fCodigo').style.display = 'flex';
+        document.getElementById('pDestino').textContent = 'Enviamos el código a ' + em + '. Vence en 10 minutos.';
+        document.getElementById('iCodigo').focus();
+      }).catch(function (err) { pantallaEntrada(err.message, em); });
+    };
+    document.getElementById('fCodigo').onsubmit = function (e) {
+      e.preventDefault();
+      var b = document.getElementById('bCodigo'); b.disabled = true; b.textContent = 'Verificando…';
+      postApi({ accion: 'verificarCodigo', email: em, codigo: document.getElementById('iCodigo').value }).then(function (r) {
+        guardarSes({ token: r.token, nombre: r.nombre, email: r.email, vence: r.vence }); arrancar();
+      }).catch(function (err) { b.disabled = false; b.textContent = 'Entrar'; alertaCodigo(err.message); });
+    };
+    document.getElementById('aOtro').onclick = function (e) { e.preventDefault(); pantallaEntrada('', ''); };
+    document.getElementById('iEmail').focus();
+  }
+  function alertaCodigo(m) {
+    var f = document.getElementById('fCodigo'), x = f.querySelector('.err');
+    if (!x) { x = document.createElement('div'); x.className = 'err'; x.setAttribute('role', 'alert'); f.insertBefore(x, f.firstChild); }
+    x.textContent = m;
+  }
+  function pedirDatos() {
+    var key = Q.get('key') || '';
+    if (key) { var p = { page: 'api', key: key, modo: MODO_PAG }; if (Q.get('depto')) p.depto = Q.get('depto'); return getApi(p); }
+    var s = leerSes();
+    if (!s) return Promise.reject(new Error('SESION'));
+    return (function () {
+      return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ accion: 'datos', token: s.token, modo: MODO_PAG, depto: Q.get('depto') || '' }) })
+        .then(function (r) { return r.json(); }).then(function (d) { if (d.error) throw new Error(d.error); return d; });
+    })();
+  }
+  function salir() { var s = leerSes(); guardarSes(null); if (s) postApi({ accion: 'salir', token: s.token }).catch(function () {}); location.reload(); }
+  var iniciado = false;
+  function arrancar() {
+    var main = document.getElementById('pEncuestas');
+    main.innerHTML = '<div class="loading">Cargando…</div>';
+    pedirDatos().then(function (d) {
+      CFG = d.cfg; window.__primeros = d.rows;
+      if (iniciado) return; iniciado = true; window.__iniciar();
+      if (CFG.agenteSesion) {
+        var hd = document.querySelector('header.top .seg');
+        var b = document.createElement('button'); b.type = 'button'; b.textContent = 'Salir'; b.title = 'Salir (' + (CFG.emailSesion || '') + ')';
+        b.onclick = salir; if (hd) hd.appendChild(b);
+      }
+    }).catch(function (e) {
+      var m = String(e && e.message || e);
+      if (m === 'SESION') { guardarSes(null); return pantallaEntrada(leerSes() ? '' : '', ''); }
+      main.innerHTML = '<div class="err">No se pudieron cargar los datos: ' + escH(m) + '</div>';
+    });
+  }
+  arrancar();
 </script>
 </body>
 </html>
